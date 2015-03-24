@@ -1,0 +1,167 @@
+<html>
+<head>
+  <script language="javascript" type="text/javascript" src="../p5.js"></script>
+  <script>
+
+  var jitterz = {};
+
+  jitterz.points = [];
+
+  // CONFIG
+  jitterz.numPoints = 400;
+
+  var w = window.innerWidth,
+      h = window.innerHeight,
+      cx = w / 2,
+      cy = h / 2,
+      c = Math.cos,
+      s = Math.sin,
+      sizeFactor = 0.5, // percent of window width/height (depending which is greater)
+      length = ( w > h ? h : w ) * sizeFactor,
+      perimeter = length * 4,
+      inc = perimeter / jitterz.numPoints;
+
+  function setup() {
+
+      var innerInc;
+
+      createCanvas( w, h );
+
+      stroke(255);
+      strokeWeight(1.5);
+
+      // create the array of points
+      for ( var i = 0; i < jitterz.numPoints; i++ ) {
+
+          var pt = [];
+          innerInc = i * inc;
+
+          /*
+                   <-2
+         3------------
+         ||          |
+         V|          |
+          |          |
+          |          |^
+          |          ||
+          ------------1
+          4->
+
+          */
+          if ( i < jitterz.numPoints / 4 ) {
+
+              pt[0] = cx + length / 2;
+              pt[1] = cy - innerInc + length / 2;
+
+          } else if ( i < jitterz.numPoints / 2 ) {
+
+              innerInc -= length;
+
+              pt[0] = cx - innerInc + length / 2;
+              pt[1] = cy - length / 2;
+
+          } else if ( i < jitterz.numPoints * 3 / 4 ) {
+
+              innerInc -= 2 * length;
+
+              pt[0] = cx - length / 2;
+              pt[1] = cy + innerInc - length / 2;
+
+          } else {
+
+              innerInc -= 3 * length;
+
+              pt[0] = cx + innerInc - length / 2;
+              pt[1] = cy + length / 2;
+
+          }
+
+          jitterz.points.push(pt);
+      }
+
+      drawLines();
+  }
+
+  function drawLines() {
+
+      clear();
+      background(0);
+
+      var pt = 0;
+
+      for ( var i = 0; i < jitterz.numPoints - 1; i += 1 ) {
+
+          // stroke(( jitterz.numPoints - i ) * 255 / jitterz.numPoints);
+
+          line(
+              jitterz.points[pt][0],
+              jitterz.points[pt][1],
+              jitterz.points[pt + 1][0],
+              jitterz.points[pt + 1][1]
+          );
+          pt++;
+      }
+  }
+
+  function distance(pt, mouse) {
+
+      var dx = mouse[0] - pt[0],
+          dy = mouse[1] - pt[1];
+
+      return Math.sqrt( dx * dx + dy * dy );
+  }
+
+  function jitter(bias) {
+      if ( jitterz.points.length > 0 ) {
+
+          var jx, jy, determinator, factor;
+
+          determinator = window.innerWidth > window.innerHeight ? 'w' : 'h';
+          factor = 1000;
+
+          if ( determinator === 'w' ) {
+              jx = window.innerWidth / factor;
+              jy = jx;
+          } else {
+              jy = window.innerHeight / factor;
+              jx = jy;
+          }
+
+          jitterz.points.forEach(function(pt) {
+
+              pt[0] += ( Math.random() * 2 - 1 ) * jx;
+              pt[1] += ( Math.random() * 2 - 1 ) * jy;
+
+              if ( bias && distance(pt, [mouseX, mouseY]) < 150 ) {
+                  pt[0] += 0.25 * (mouseX - pt[0]) / distance(pt, [mouseX, mouseY]);
+                  pt[1] += 0.25 * (mouseY - pt[1]) / distance(pt, [mouseX, mouseY]);
+              }
+          });
+
+          drawLines();
+      }
+  }
+
+  // pressing space bar toggles the bias
+  var includeBias = false;
+
+  function keyTyped() {
+
+      if ( key === ' ' ) {
+          includeBias = !includeBias;
+      }
+  }
+
+  function draw() {
+      jitter(includeBias);
+  }
+
+
+  </script>
+  <!-- this line removes any default padding and style. you might only need one of these values set. -->
+  <style> body {padding: 0; margin: 0;} </style>
+</head>
+
+<body>
+</body>
+</html>

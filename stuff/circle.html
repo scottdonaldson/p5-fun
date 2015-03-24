@@ -1,0 +1,117 @@
+<html>
+<head>
+  <script language="javascript" type="text/javascript" src="../p5.js"></script>
+  <script>
+
+  var jitterz = {};
+
+  jitterz.points = [];
+
+  // CONFIG
+  jitterz.numPoints = 100;
+
+  var w = window.innerWidth,
+      h = window.innerHeight,
+      c = Math.cos,
+      s = Math.sin,
+      inc = 2 * Math.PI / jitterz.numPoints;
+
+  var cx = w / 2,
+      cy = h / 2,
+      r = w > h ? h * 0.2 : w * 0.2;
+
+
+  function setup() {
+
+      createCanvas( w, h );
+
+      stroke(255, 255, 255, 100);
+      strokeWeight(1.5);
+
+      for ( var i = 0; i < jitterz.numPoints - 1; i += inc ) {
+          jitterz.points.push([cx + r * c(i), cy + r * s(i)]);
+      }
+
+      drawLines();
+  }
+
+  function drawLines() {
+
+      clear();
+      background(0);
+
+      var pt = 0,
+          inc = 2 * Math.PI / jitterz.numPoints;
+
+      for ( var i = 0; i < jitterz.numPoints - 2; i += inc ) {
+
+          line(
+              jitterz.points[pt][0],
+              jitterz.points[pt][1],
+              jitterz.points[pt + 1][0],
+              jitterz.points[pt + 1][1]
+          );
+          pt++;
+      }
+  }
+
+  function distance(pt, mouse) {
+
+      var dx = mouse[0] - pt[0],
+          dy = mouse[1] - pt[1];
+
+      return Math.sqrt( dx * dx + dy * dy );
+  }
+
+  function jitter(bias) {
+      if ( jitterz.points.length > 0 ) {
+
+          var jx, jy, determinator, factor;
+
+          determinator = window.innerWidth > window.innerHeight ? 'w' : 'h';
+          factor = 1000;
+
+          if ( determinator === 'w' ) {
+              jx = window.innerWidth / factor;
+              jy = jx;
+          } else {
+              jy = window.innerHeight / factor;
+              jx = jy;
+          }
+
+          jitterz.points.forEach(function(pt) {
+              pt[0] += ( Math.random() * 2 - 1 ) * jx;
+              pt[1] += ( Math.random() * 2 - 1 ) * jy;
+
+              if ( bias && distance(pt, [mouseX, mouseY]) < 150 ) {
+                  pt[0] += 0.25 * (mouseX - pt[0]) / distance(pt, [mouseX, mouseY]);
+                  pt[1] += 0.25 * (mouseY - pt[1]) / distance(pt, [mouseX, mouseY]);
+              }
+          });
+
+          drawLines();
+      }
+  }
+
+  // pressing space bar toggles the bias
+  var includeBias = false;
+
+  function keyTyped() {
+
+      if ( key === ' ' ) {
+          includeBias = !includeBias;
+      }
+  }
+
+  function draw() {
+      jitter(includeBias);
+  }
+
+  </script>
+  <!-- this line removes any default padding and style. you might only need one of these values set. -->
+  <style> body {padding: 0; margin: 0;} </style>
+</head>
+
+<body>
+</body>
+</html>
