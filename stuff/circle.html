@@ -18,8 +18,13 @@
 
   var cx = w / 2,
       cy = h / 2,
-      r = w > h ? h * 0.2 : w * 0.2;
+      r = w > h ? h * 0.2 : w * 0.2,
+      closeness = r * 0.75; // how close should the cursor have to be for a point to move toward it
 
+// map the distance (0 - closeness) to 255-0 for color mapping
+function mapCloseness(dist) {
+    return 255 - 1.25 * ( (-255 / (closeness / dist)) + 255 );
+}
 
   function setup() {
 
@@ -35,15 +40,24 @@
       drawLines();
   }
 
-  function drawLines() {
+  function drawLines(bias) {
 
       clear();
       background(0);
 
       var pt = 0,
-          inc = 2 * Math.PI / jitterz.numPoints;
+          inc = 2 * Math.PI / jitterz.numPoints,
+          dist;
 
       for ( var i = 0; i < jitterz.numPoints - 2; i += inc ) {
+
+          dist = distance(jitterz.points[pt], [mouseX, mouseY]);
+
+          if ( dist < closeness ) {
+              stroke(255, mapCloseness(dist), mapCloseness(dist), 100);
+          } else {
+              stroke(255, 255, 255, 100);
+          }
 
           line(
               jitterz.points[pt][0],
@@ -83,23 +97,23 @@
               pt[0] += ( Math.random() * 2 - 1 ) * jx;
               pt[1] += ( Math.random() * 2 - 1 ) * jy;
 
-              if ( bias && distance(pt, [mouseX, mouseY]) < 150 ) {
+              if ( bias && distance(pt, [mouseX, mouseY]) < closeness ) {
                   pt[0] += 0.25 * (mouseX - pt[0]) / distance(pt, [mouseX, mouseY]);
                   pt[1] += 0.25 * (mouseY - pt[1]) / distance(pt, [mouseX, mouseY]);
               }
           });
 
-          drawLines();
+          drawLines(bias);
       }
   }
 
   // pressing space bar toggles the bias
-  var includeBias = false;
+  var includeBias = true;
 
   function keyTyped() {
 
       if ( key === ' ' ) {
-          includeBias = !includeBias;
+          // includeBias = !includeBias;
       }
   }
 

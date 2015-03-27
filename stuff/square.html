@@ -82,6 +82,14 @@
       drawLines();
   }
 
+  function distance(pt, mouse) {
+
+      var dx = mouse[0] - pt[0],
+          dy = mouse[1] - pt[1];
+
+      return Math.sqrt( dx * dx + dy * dy );
+  }
+
   function drawLines() {
 
       clear();
@@ -91,7 +99,12 @@
 
       for ( var i = 0; i < jitterz.numPoints - 1; i += 1 ) {
 
-          // stroke(( jitterz.numPoints - i ) * 255 / jitterz.numPoints);
+          var color = 255 - 1.5 * 255 * distance(jitterz.points[pt], [mouseX, mouseY]) / length;
+
+          color = Math.round(color);
+          if ( color < 35 ) color = 35;
+
+          stroke(color);
 
           line(
               jitterz.points[pt][0],
@@ -101,14 +114,6 @@
           );
           pt++;
       }
-  }
-
-  function distance(pt, mouse) {
-
-      var dx = mouse[0] - pt[0],
-          dy = mouse[1] - pt[1];
-
-      return Math.sqrt( dx * dx + dy * dy );
   }
 
   function jitter(bias) {
