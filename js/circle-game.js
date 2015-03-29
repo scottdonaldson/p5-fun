@@ -14,15 +14,50 @@ var w = window.innerWidth,
 var cx = w / 2,
     cy = h / 2,
     r = w > h ? h * 0.2 : w * 0.2,
+    targetR = 0.95 * r,
     numLoops = 10, // number of times to loop around the circle (for a multitude of points)
     closeness = r * 0.75, // how close should the cursor have to be for a point to move toward it
     biasFactor = 0.4; // the smaller, the less attracted to the cursor points are
 
-var timer = 0;
+var timer = 0,
+    currentLevel = 0;
 
-// map the distance (0 - closeness) to 255-0 for color mapping
+function shapeReset() {
+    fill(255, 255, 255, 80);
+    strokeWeight(0);
+}
+
+var levels = [
+    {
+        shape: function() {
+            shapeReset();
+            ellipse(cx, cy, 2 * targetR, 2 * targetR);
+        },
+        test: function(px) {
+            return distance(px, [cx, cy] ) < targetR;
+        }
+    },
+    {
+        shape: function() {
+            shapeReset();
+            rect(cx - w / 6, cy - w / 16, w / 3, w / 8);
+        },
+        test: function(px) {
+            return px[0] > cx - w / 6 && px[0] < cx + w / 6 && px[1] > cy - w / 16 && px[1] < cy + w / 16;
+        }
+    }
+];
+
+// map the distance (0 - closeness) to 0-255 for color mapping
 function mapCloseness(dist) {
-    return 255 - 1.25 * ( (-255 / (closeness / dist)) + 255 );
+    return (closeness - dist) * 255 / closeness;
+}
+
+function normalizeColor(value) {
+    if ( value < 80 ) value = 80;
+    if ( value > 255 ) value = 255;
+
+    return value;
 }
 
 function setup() {
@@ -39,6 +74,9 @@ function setup() {
 }
 
 function startTimer() {
+
+    textFont('Helvetica Neue');
+
     setInterval(function(){
         timer++;
     }, 1000);
@@ -63,41 +101,55 @@ function time() {
     setTimeout(time, 1000);
 }
 
-function drawCircle() {
-    fill(200, 200, 200, 127);
-    strokeWeight(0);
-    ellipse(cx, cy, 2 * r, 2 * r);
-}
-
 function drawLines(bias) {
 
     clear();
     background(0);
 
-    drawCircle();
+    levels[currentLevel].shape();
     time();
-
-    stroke(255, 255, 255, 100);
-    strokeWeight(1.5);
 
     var pt = 0,
         inc = 2 * Math.PI / jitterz.numPoints,
         dist,
         numberInside = 0;
 
+    var r, g, b, a;
+    a = 100;
+
     for ( var i = 0; i < numLoops * 2 * Math.PI; i += inc ) {
+
+        r = g = b = 255;
 
         dist = distance(jitterz.points[pt], [mouseX, mouseY]);
 
-        if ( distance(jitterz.points[pt], [cx, cy] ) < r ) {
+        strokeWeight(1.5);
+
+        // if in the target, add to the number inside
+        if ( levels[currentLevel].test(jitterz.points[pt]) ) {
             numberInside++;
+        // if not, red pixels remain high but others are low
+        } else {
+            g = b = 60;
         }
 
         if ( dist < closeness ) {
-            stroke(255, mapCloseness(dist), mapCloseness(dist), 100);
-        } else {
-            stroke(255, 255, 255, 100);
+
+            r -= mapCloseness(dist);
+            g -= mapCloseness(dist);
+            b += 0.5 * mapCloseness(dist);
         }
+
+        // make sure they stay within 0-255 range
+        r = normalizeColor(r);
+        g = normalizeColor(g);
+        b = normalizeColor(b);
+
+        stroke(r, g, b, a);
+
+        // point
+        ellipse(jitterz.points[pt][0], jitterz.points[pt][1], 1, 1);
+
         line(
             jitterz.points[pt][0],
             jitterz.points[pt][1],
@@ -107,6 +159,8 @@ function drawLines(bias) {
         pt++;
     }
 
+    // draw the ratio of success rectangle
+    strokeWeight(0);
     fill(255);
     rect(w - 40, ( 1 - numberInside / (jitterz.numPoints * numLoops) ) * h, w, h);
 }
@@ -155,7 +209,7 @@ var includeBias = true;
 function keyTyped() {
 
     if ( key === ' ' ) {
-        // includeBias = !includeBias;
+        currentLevel++;
     }
 }
 
